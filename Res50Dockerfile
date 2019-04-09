@@ -1,0 +1,11 @@
+FROM gcr.io/clipper-model-comp/tf-serving-base:bench
+
+# The only required piece is the model name in order to differentiate endpoints
+COPY res50-models  tf_models/inception 
+ENV MODEL_NAME=inception
+
+WORKDIR /container
+
+COPY tf_serving_proxy_container.py /container/
+
+ENTRYPOINT ["python", "tf_serving_proxy_container.py"]
