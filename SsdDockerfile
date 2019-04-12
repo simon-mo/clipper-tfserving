@@ -1,0 +1,58 @@
+FROM tensorflow/serving
+#FROM gcr.io/clipper-model-comp/tf-serving-base:bench
+
+RUN apt update
+
+RUN apt-get install -y python
+
+RUN apt-get install -y python-pip
+
+RUN apt-get install -y python-setuptools
+
+RUN pip install prometheus_client
+
+RUN pip install subprocess32
+
+RUN pip install numpy==1.14 docker==3.1.* requests==2.18.* pyzmq==17.0.* pyyaml==3.12.* cloudpickle==0.5.*
+
+RUN pip install jsonschema
+
+RUN pip install  pillow
+
+RUN pip install tensorflow-serving-api
+
+RUN pip install psutil
+
+RUN  apt-get install -y libzmq5 libzmq5-dev redis-server  build-essential
+
+RUN pip install redis
+
+RUN pip install pybase64
+
+RUN apt-get install net-tools
+
+COPY ssdmobilenetv2 tf_models/
+
+COPY clipper_admin /clipper_admin
+
+RUN cd /clipper_admin && pip install -q .
+
+ENV MODEL_NAME=ssd
+
+ENV CLIPPER_MODEL_PATH=/model
+
+COPY containers/python/__init__.py rpc.py /container/
+
+COPY tensorflow /container/tensorflow
+
+HEALTHCHECK --interval=3s --timeout=3s --retries=1 CMD test -f /model_is_ready.check || exit 1
+
+ENV CLIPPER_MODEL_VERSION=develop
+
+WORKDIR /container
+
+COPY tf_serving_proxy_container.py bootstrap_server.py  /container/
+
+COPY metrics_config.yaml /container
+
+ENTRYPOINT python tf_serving_proxy_container.py
